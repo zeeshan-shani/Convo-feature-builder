@@ -314,5 +314,3 @@ This is a demonstration project. To extend it:
 This project is for demonstration purposes.
 
 ---
-
-Built with ❤️ using React and TypeScript
