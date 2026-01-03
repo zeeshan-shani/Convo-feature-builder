@@ -205,11 +205,15 @@ function App() {
   const renderSchema = () => {
     if (!enhancedSchema) return null;
 
+    // Use a key based on schema type to force remount when switching schemas
+    const schemaKey = enhancedSchema === todoSchema ? 'todo' : 'calculator';
+
     // Special handling for todo schema to render tasks dynamically
     if (enhancedSchema === todoSchema) {
       return (
-        <div className="schema-container">
+        <div className="schema-container" key={schemaKey}>
           <SchemaRenderer
+            key={schemaKey}
             schema={enhancedSchema}
             onAction={handleTodoAction}
           />
@@ -219,8 +223,9 @@ function App() {
 
     // Calculator schema
     return (
-      <div className="schema-container">
+      <div className="schema-container" key={schemaKey}>
         <SchemaRenderer
+          key={schemaKey}
           schema={enhancedSchema}
           onAction={handleCalculatorAction}
         />

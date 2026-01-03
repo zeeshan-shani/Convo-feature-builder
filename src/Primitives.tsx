@@ -227,7 +227,23 @@ export interface StateProps {
 }
 
 export const State: React.FC<StateProps> = ({ initialState = {}, children }) => {
-  const [state, setState] = useState(initialState);
+  // Use a ref to track the previous initialState to detect changes
+  const prevInitialStateRef = React.useRef<string>('');
+  const initialStateKey = JSON.stringify(initialState);
+  
+  // Only reset state if initialState actually changed (not just on every render)
+  const [state, setState] = useState(() => {
+    prevInitialStateRef.current = initialStateKey;
+    return initialState;
+  });
+
+  // Reset state when initialState changes (important for schema switching)
+  React.useEffect(() => {
+    if (prevInitialStateRef.current !== initialStateKey) {
+      prevInitialStateRef.current = initialStateKey;
+      setState(initialState);
+    }
+  }, [initialStateKey, initialState]);
 
   const handleSetState = useCallback((value: any) => {
     // If value is a function, call it with current state
@@ -243,7 +259,9 @@ export const State: React.FC<StateProps> = ({ initialState = {}, children }) => 
   }, []);
 
   if (typeof children === 'function') {
-    return <>{children(state || {}, handleSetState)}</>;
+    // Always ensure state is an object, never null/undefined
+    const safeState = state || {};
+    return <>{children(safeState, handleSetState)}</>;
   }
 
   return <>{children}</>;

@@ -59,10 +59,19 @@ export const SchemaRenderer: React.FC<SchemaRendererProps> = ({
             // Return the value as-is (don't force string conversion for numbers/booleans in simple case)
             return contextValue;
           }
+          // If context value is not found, return sensible defaults to prevent showing {{key}} literally
+          // This happens when state hasn't initialized yet during schema switching
+          if (contextKey.includes('input') || contextKey.includes('Input')) {
+            return '';
+          }
+          // For numbers/length, return 0 if not found
+          if (contextKey.includes('length') || contextKey.includes('count') || contextKey === 'display') {
+            return contextKey === 'display' ? '0' : 0;
+          }
           // Debug: log when context value is not found
-          // if (process.env.NODE_ENV === 'development') {
-          //   console.warn(`Context key "${contextKey}" not found. Available keys:`, Object.keys(context));
-          // }
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(`Context key "${contextKey}" not found. Available keys:`, Object.keys(context));
+          }
           return value; // Return original if not found
         }
         
@@ -223,17 +232,21 @@ export const SchemaRenderer: React.FC<SchemaRendererProps> = ({
     case 'State':
       // Extract initialState from props before resolution (it's not a template)
       const initialState = props.initialState || {};
+      // Create a stable key based on initialState to force remount when schema changes
+      const stateKey = JSON.stringify(initialState);
       return (
-        <State initialState={initialState}>
+        <State key={stateKey} initialState={initialState}>
           {(state: any, setState: (value: any) => void) => {
+            // Ensure state is always an object
+            const currentState = state || {};
             // Create new context with state - merge state into context
             // State should override context values
-            const stateContext = { ...context, ...state, setState };
+            const stateContext = { ...context, ...currentState, setState };
             return (
               <>
                 {children.map((child, index) => (
                   <SchemaRenderer
-                    key={`state-child-${index}`}
+                    key={`state-child-${index}-${stateKey}`}
                     schema={child}
                     context={stateContext}
                     onAction={(action, ctx) => {
